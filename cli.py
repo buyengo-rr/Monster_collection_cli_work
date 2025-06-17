@@ -157,5 +157,85 @@ def heal_monster_prompt(player_id):
         print(f"💖 {monster.nickname or monster.species.name} was fully healed!")
     except Exception:
         print("❌ Invalid choice.")
+from battle import perform_ability
+
+def battle_wild_monster(player_id):
+    session = get_session()
+    player_monsters = get_player_collection(player_id)
+    if not player_monsters:
+        print("📉 You have no monsters to battle with.")
+        session.close()
+        return
+    
+    print("Choose a monster to battle with:")
+    for i, mon in enumerate(player_monsters, 1):
+        nick = mon.nickname or mon.species.name
+        print(f"{i}. {nick} (Lv. {mon.level}) HP: {mon.current_hp}/{mon.max_hp}")
+
+    choice = input("➡️ ")
+    try:
+        idx = int(choice) - 1
+        your_monster = player_monsters[idx]
+    except Exception:
+        print("❌ Invalid choice.")
+        session.close()
+        return
+    
+    wild_monster = random.choice(session.query(MonsterSpecies).all())
+    print(f"🌲 A wild {wild_monster.name} appeared!")
+
+    wild = PlayerMonster(
+        id=-1,
+        player_id=None,
+        species_id=wild_monster.id,
+        species=wild_monster,
+        nickname=None,
+        level=1,
+        experience=0,
+        max_hp=wild_monster.base_stats['hp'],
+        current_hp=wild_monster.base_stats['hp'],
+        attack=wild_monster.base_stats['attack'],
+        defense=wild_monster.base_stats['defense'],
+        speed=wild_monster.base_stats['speed'],
+    )
+
+    print(f"⚔️ Battle start! {your_monster.nickname or your_monster.species.name} VS Wild {wild.species.name}")
+
+    while your_monster.current_hp > 0 and wild.current_hp > 0:
+        print(f"\nYour HP: {your_monster.current_hp}/{your_monster.max_hp}")
+        print(f"Wild {wild.species.name} HP: {wild.current_hp}/{wild.max_hp}")
+
+        print("Choose ability to use:")
+        for i, ab in enumerate(your_monster.species.abilities, 1):
+            ab_name = ab if isinstance(ab, str) else ab['name']
+            print(f"{i}. {ab_name}")
+
+        choice = input("➡️ ")
+        try:
+            ab_idx = int(choice) - 1
+            ability = your_monster.species.abilities[ab_idx]
+            ability_name = ability if isinstance(ability, str) else ability['name']
+        except Exception:
+            print("❌ Invalid ability.")
+            continue
+        
+        msg, damage = perform_ability(your_monster, wild, ability_name)
+        print(msg)
+
+        if wild.current_hp <= 0:
+            print(f"🎉 You defeated the wild {wild.species.name}!")
+            break
+        
+        wild_ability = random.choice(wild.species.abilities)
+        wild_ability_name = wild_ability if isinstance(wild_ability, str) else wild_ability['name']
+        msg, damage = perform_ability(wild, your_monster, wild_ability_name)
+        print(f"Wild {wild.species.name} used {wild_ability_name}!")
+        print(msg)
+
+        if your_monster.current_hp <= 0:
+            print(f"💀 Your {your_monster.nickname or your_monster.species.name} was defeated!")
+            break
+
+    session.close()
 
 
