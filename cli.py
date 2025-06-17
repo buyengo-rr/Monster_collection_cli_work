@@ -119,5 +119,19 @@ def level_up_prompt(player_id):
         print(f"💪 {monster.species.name} is now level {new_stats['level']}!")
     except Exception:
         print("❌ Invalid choice.")
+def nickname_monster_prompt(player_id, species_id):
+    session = get_session()
+    mon = session.query(PlayerMonster)\
+        .filter_by(player_id=player_id, species_id=species_id)\
+        .order_by(PlayerMonster.id.desc())\
+        .first()
+    if mon:
+        print(f"✨ You caught a {mon.species.name}!")
+        nickname = input("📛 Would you like to give it a nickname? (leave empty for none): ").strip()
+        if nickname:
+            mon.nickname = nickname
+            session.commit()
+            print(f"✅ Nicknamed your monster '{nickname}'!")
+    session.close()
 
 
