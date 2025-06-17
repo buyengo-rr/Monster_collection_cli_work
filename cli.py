@@ -238,4 +238,6 @@ def battle_wild_monster(player_id):
 
     session.close()
 
+if __name__ == '__main__':
+    start_game()
 
