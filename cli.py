@@ -133,5 +133,29 @@ def nickname_monster_prompt(player_id, species_id):
             session.commit()
             print(f"✅ Nicknamed your monster '{nickname}'!")
     session.close()
+def heal_monster_prompt(player_id):
+    monsters = get_player_collection(player_id)
+    if not monsters:
+        print("💉 You have no monsters to heal.")
+        return
+    print("💊 Choose a monster to heal:")
+    for i, mon in enumerate(monsters, 1):
+        nick = mon.nickname if mon.nickname else mon.species.name
+        print(f"{i}. {nick} (HP: {mon.current_hp}/{mon.max_hp})")
+    choice = input("➡️ ")
+    try:
+        idx = int(choice) - 1
+        monster = monsters[idx]
+        if monster.current_hp == monster.max_hp:
+            print(f"💡 {monster.nickname or monster.species.name} is already at full health.")
+            return
+        session = get_session()
+        mon_db = session.query(PlayerMonster).get(monster.id)
+        mon_db.current_hp = mon_db.max_hp
+        session.commit()
+        session.close()
+        print(f"💖 {monster.nickname or monster.species.name} was fully healed!")
+    except Exception:
+        print("❌ Invalid choice.")
 
 
